@@ -102,6 +102,64 @@ else
     warn "git/config not found in dotfiles, skipping"
 fi
 
+# Helix editor
+info "Installing Helix"
+install_helix() {
+    # Prefer the distro package; fall back to the official AppImage/tarball if needed.
+    if command -v hx >/dev/null 2>&1; then
+        ok "Helix already installed ($(hx --version 2>&1 | head -1))"
+    elif command -v apt-get >/dev/null 2>&1; then
+        run sudo apt-get install -y helix
+        ok "Helix installed via apt"
+    elif command -v brew >/dev/null 2>&1; then
+        run brew install helix
+        ok "Helix installed via Homebrew"
+    else
+        warn "Cannot install Helix automatically — please install it manually: https://helix-editor.com"
+        return
+    fi
+}
+
+if $DRY_RUN; then
+    printf '  [dry-run] Install helix editor\n'
+else
+    install_helix
+fi
+
+# Helix config
+info "Configuring Helix"
+HELIX_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/helix"
+HELIX_SRC_DIR="$DOTFILES/config/helix"
+
+if $DRY_RUN; then
+    printf '  [dry-run] Link %s → %s\n' "$HELIX_SRC_DIR" "$HELIX_CONFIG_DIR"
+else
+    if [[ -e "$HELIX_CONFIG_DIR" && ! -L "$HELIX_CONFIG_DIR" ]]; then
+        backup="${HELIX_CONFIG_DIR}.bak.$(date +%Y%m%d%H%M%S)"
+        warn "Backing up existing Helix config dir → $backup"
+        mv "$HELIX_CONFIG_DIR" "$backup"
+    elif [[ -L "$HELIX_CONFIG_DIR" ]]; then
+        warn "Removing existing Helix config symlink"
+        rm "$HELIX_CONFIG_DIR"
+    fi
+    mkdir -p "$(dirname "$HELIX_CONFIG_DIR")"
+    ln -sf "$HELIX_SRC_DIR" "$HELIX_CONFIG_DIR"
+    ok "Linked config/helix → $HELIX_CONFIG_DIR"
+fi
+
+# Go LSP — gopls
+info "Installing gopls (Go LSP)"
+if $DRY_RUN; then
+    printf '  [dry-run] go install golang.org/x/tools/gopls@latest\n'
+else
+    if command -v go >/dev/null 2>&1; then
+        go install golang.org/x/tools/gopls@latest
+        ok "gopls installed"
+    else
+        warn "go not found — skipping gopls (install Go first, then run: go install golang.org/x/tools/gopls@latest)"
+    fi
+fi
+
 # Byobu — enable for login sessions
 info "Configuring byobu"
 if command -v byobu-enable >/dev/null 2>&1; then

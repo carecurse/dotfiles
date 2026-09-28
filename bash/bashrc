@@ -12,3 +12,19 @@ shopt -s histappend
 
 # Local secrets (API keys, tokens) — never committed
 [ -f "$HOME/.bashrc.local" ] && source "$HOME/.bashrc.local"
+
+# Byobu quick-reference — shown once per login shell
+if [[ "$SHLVL" -eq 1 ]] && command -v byobu >/dev/null 2>&1; then
+    cat <<'EOF'
+
+  byobu quick reference
+  ─────────────────────
+  F2          new window
+  F3 / F4     previous / next window
+  F6          detach session (leave it running)
+  F8          rename current window
+  Ctrl-F2     vertical split   │   Shift-F2  horizontal split
+  Shift-F3/F4 move between panes
+
+EOF
+fi

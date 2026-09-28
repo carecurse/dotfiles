@@ -1,0 +1,22 @@
+# Helix language / LSP configuration
+# https://docs.helix-editor.com/languages.html
+
+# ---------------------------------------------------------------------------
+# Go
+# ---------------------------------------------------------------------------
+[[language]]
+name = "go"
+auto-format = true
+language-servers = ["gopls"]
+
+[language-server.gopls]
+command = "gopls"
+args = []
+
+[language-server.gopls.config.hints]
+assignVariableTypes    = true
+compositeLiteralFields = true
+constantValues         = true
+functionTypeParameters = true
+parameterNames         = true
+rangeVariableTypes     = true

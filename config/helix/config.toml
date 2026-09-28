@@ -1,0 +1,32 @@
+# Helix editor configuration
+# https://docs.helix-editor.com/configuration.html
+
+theme = "catppuccin_mocha"
+
+[editor]
+line-number = "relative"
+mouse = true
+auto-save = true
+completion-trigger-len = 1
+color-modes = true
+
+[editor.cursor-shape]
+insert = "bar"
+normal = "block"
+select = "underline"
+
+[editor.file-picker]
+hidden = false
+
+[editor.statusline]
+left = ["mode", "spinner", "file-name", "file-modification-indicator"]
+center = []
+right = ["diagnostics", "selections", "position", "file-encoding", "file-line-ending", "file-type"]
+
+[editor.lsp]
+display-messages = true
+display-inlay-hints = true
+
+[keys.normal]
+# Use space as leader key
+space = { f = "file_picker", b = "buffer_picker", "/" = "global_search" }
