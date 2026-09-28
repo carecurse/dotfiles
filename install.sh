@@ -138,20 +138,89 @@ else
     ok "Linked config/helix → $HELIX_CONFIG_DIR"
 fi
 
+# Go — latest version from go.dev
+info "Installing Go"
+install_go() {
+    local current_version
+    current_version=$(go version 2>/dev/null | grep -oP 'go\d+\.\d+\.\d+' | head -1)
+    
+    # Fetch latest Go version
+    local latest_version
+    latest_version=$(curl -s https://go.dev/dl/ | grep -oP 'go\d+\.\d+\.\d+' | head -1)
+    
+    if [[ -z "$latest_version" ]]; then
+        warn "Could not determine latest Go version from go.dev"
+        return 1
+    fi
+    
+    if [[ "$current_version" == "$latest_version" ]]; then
+        ok "Go $latest_version already installed"
+        return 0
+    fi
+    
+    # Determine system architecture
+    local os="linux"
+    local arch
+    case "$(uname -m)" in
+        x86_64) arch="amd64" ;;
+        aarch64) arch="arm64" ;;
+        armv7l) arch="armv6l" ;;
+        *) err "Unsupported architecture: $(uname -m)"; return 1 ;;
+    esac
+    
+    local tarball="$latest_version.$os-$arch.tar.gz"
+    local download_url="https://go.dev/dl/$tarball"
+    local temp_dir
+    temp_dir=$(mktemp -d)
+    
+    info "Downloading $tarball from go.dev..."
+    if ! curl -fsSL -o "$temp_dir/$tarball" "$download_url"; then
+        err "Failed to download Go from $download_url"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+    
+    info "Extracting to /usr/local..."
+    if ! sudo tar -C /usr/local -xzf "$temp_dir/$tarball"; then
+        err "Failed to extract Go tarball"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+    
+    rm -rf "$temp_dir"
+    ok "Go $latest_version installed successfully"
+    return 0
+}
+
+if $DRY_RUN; then
+    printf '  [dry-run] Install latest Go from go.dev\n'
+else
+    install_go || warn "Go installation failed; continuing..."
+fi
+
 # Go LSP — gopls
 info "Installing gopls (Go LSP)"
+install_gopls() {
+    local go_bin
+    go_bin=$(command -v go) || go_bin="/usr/local/go/bin/go"
+    if [[ -x "$go_bin" ]]; then
+        if "$go_bin" install golang.org/x/tools/gopls@latest 2>/dev/null; then
+            ok "gopls installed"
+            return 0
+        else
+            warn "gopls installation failed; continuing..."
+            return 1
+        fi
+    else
+        warn "go not found — skipping gopls (install Go first, then run: /usr/local/go/bin/go install golang.org/x/tools/gopls@latest)"
+        return 1
+    fi
+}
+
 if $DRY_RUN; then
     printf '  [dry-run] go install golang.org/x/tools/gopls@latest\n'
 else
-    if command -v go >/dev/null 2>&1; then
-        if go install golang.org/x/tools/gopls@latest 2>/dev/null; then
-            ok "gopls installed"
-        else
-            warn "gopls installation failed; continuing..."
-        fi
-    else
-        warn "go not found — skipping gopls (install Go first, then run: go install golang.org/x/tools/gopls@latest)"
-    fi
+    install_gopls || true
 fi
 
 # Byobu — enable for login sessions
