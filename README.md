@@ -1,37 +1,52 @@
 # dotfiles
 
-Personal configuration files managed with symlinks and Git.
+Personal configuration files managed with Git.
 
 ## Structure
 
 ```
 dotfiles/
 ├── bash/
-│   └── .bashrc          # Symlinked → ~/.bashrc
+│   └── bashrc           # Sourced fragment — custom config only
 ├── config/              # XDG config stubs (add per-app subdirs)
-├── git/                 # git config files
+├── git/                 # gitconfig (symlinked → ~/.gitconfig)
 ├── ssh/                 # Non-secret SSH config (config, known_hosts.example)
+├── install.sh           # Bootstrap script
 └── README.md
+```
+
+### Model
+
+`~/.bashrc` is a **real file** that stays on disk and is not tracked. It sources
+the dotfiles fragment at the end:
+
+```sh
+# bottom of ~/.bashrc
+[ -f "$HOME/dotfiles/bash/bashrc" ] && source "$HOME/dotfiles/bash/bashrc"
+```
+
+Secrets live in `~/.bashrc.local`, sourced from the fragment — never committed:
+
+```sh
+# ~/.bashrc.local
+export ANTHROPIC_API_KEY=""
+export GITHUB_TOKEN=""
 ```
 
 ## Bootstrap
 
-Clone and run the symlink setup on a new machine:
-
 ```sh
 git clone git@github.com:<user>/dotfiles.git ~/dotfiles
-
-# Shell
-ln -sf ~/dotfiles/bash/.bashrc ~/.bashrc
-
-# Git (if you add git/config)
-ln -sf ~/dotfiles/git/config ~/.gitconfig
-
-# SSH config (public/non-secret only)
-mkdir -p ~/.ssh
-ln -sf ~/dotfiles/ssh/config ~/.ssh/config
-chmod 700 ~/.ssh
+bash ~/dotfiles/install.sh
 ```
+
+`install.sh` will:
+- Append the source line to `~/.bashrc` (idempotent)
+- Create `~/.bashrc.local` template if missing
+- Symlink `ssh/config` → `~/.ssh/config` if present
+- Symlink `git/config` → `~/.gitconfig` if present
+
+Run with `--dry-run` to preview changes without applying them.
 
 ---
 
