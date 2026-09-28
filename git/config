@@ -1,0 +1,16 @@
+[user]
+	name = carecurse
+	email = 290223291+carecurse@users.noreply.github.com
+
+[core]
+	autocrlf = input
+	editor = vim
+
+[init]
+	defaultBranch = main
+
+[push]
+	autoSetupRemote = true
+
+[pull]
+	rebase = true
