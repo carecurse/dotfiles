@@ -102,6 +102,19 @@ else
     warn "git/config not found in dotfiles, skipping"
 fi
 
+# Byobu — enable for login sessions
+info "Configuring byobu"
+if command -v byobu-enable >/dev/null 2>&1; then
+    if $DRY_RUN; then
+        printf '  [dry-run] byobu-enable\n'
+    else
+        byobu-enable
+        ok "byobu enabled for login sessions"
+    fi
+else
+    warn "byobu not found — skipping (install with: apt install byobu)"
+fi
+
 echo
 ok "Done. Reload your shell: source ~/.bashrc"
 $DRY_RUN && warn "Dry-run mode — no changes were made."
