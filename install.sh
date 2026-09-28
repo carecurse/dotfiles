@@ -138,6 +138,23 @@ else
     ok "Linked config/helix → $HELIX_CONFIG_DIR"
 fi
 
+# Helix tree-sitter grammars
+info "Building Helix tree-sitter grammars"
+if $DRY_RUN; then
+    printf '  [dry-run] hx --grammar build go\n'
+else
+    if command -v hx >/dev/null 2>&1; then
+        # Build Go grammar (this may take a while on first run)
+        if timeout 300 hx --grammar build go 2>/dev/null; then
+            ok "Go tree-sitter grammar built"
+        else
+            warn "Go grammar build timed out or failed; you can build it manually with: hx --grammar build go"
+        fi
+    else
+        warn "helix not found — skipping grammar build"
+    fi
+fi
+
 # Go — latest version from go.dev
 info "Installing Go"
 install_go() {

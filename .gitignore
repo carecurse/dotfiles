@@ -37,3 +37,6 @@ ssh/*.pem
 
 # OS noise
 Thumbs.db
+
+# Helix runtime (generated tree-sitter grammars)
+config/helix/runtime/
