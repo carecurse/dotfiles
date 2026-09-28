@@ -2,7 +2,7 @@
 # install.sh — wire up dotfiles on a new machine
 # Usage: bash install.sh [--dry-run]
 
-set -euo pipefail
+set -uo pipefail
 
 DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DRY_RUN=false
@@ -11,29 +11,14 @@ DRY_RUN=false
 info()  { printf '  \033[34m%s\033[0m\n' "$*"; }
 ok()    { printf '  \033[32m✓\033[0m %s\n' "$*"; }
 warn()  { printf '  \033[33m!\033[0m %s\n' "$*"; }
+err()   { printf '  \033[31m✗\033[0m %s\n' "$*"; }
 
 run() {
     if $DRY_RUN; then
         printf '  [dry-run] %s\n' "$*"
     else
-        eval "$@"
+        "$@"
     fi
-}
-
-backup_and_replace() {
-    local target="$1"
-    local source="$2"
-
-    if [[ -e "$target" && ! -L "$target" ]]; then
-        local backup="${target}.bak.$(date +%Y%m%d%H%M%S)"
-        warn "Backing up $target → $backup"
-        run mv "$target" "$backup"
-    elif [[ -L "$target" ]]; then
-        warn "Removing existing symlink $target"
-        run rm "$target"
-    fi
-
-    run "grep -qF \"$source\" \"$target\" 2>/dev/null || echo 'source \"$source\"' >> \"$target\""
 }
 
 info "Dotfiles: $DOTFILES"
@@ -109,11 +94,17 @@ install_helix() {
     if command -v hx >/dev/null 2>&1; then
         ok "Helix already installed ($(hx --version 2>&1 | head -1))"
     elif command -v apt-get >/dev/null 2>&1; then
-        run sudo apt-get install -y helix
-        ok "Helix installed via apt"
+        if run sudo apt-get install -y hx 2>/dev/null; then
+            ok "Helix installed via apt"
+        else
+            err "Failed to install helix via apt (package 'hx')"
+        fi
     elif command -v brew >/dev/null 2>&1; then
-        run brew install helix
-        ok "Helix installed via Homebrew"
+        if run brew install helix; then
+            ok "Helix installed via Homebrew"
+        else
+            err "Failed to install helix via Homebrew"
+        fi
     else
         warn "Cannot install Helix automatically — please install it manually: https://helix-editor.com"
         return
@@ -123,7 +114,7 @@ install_helix() {
 if $DRY_RUN; then
     printf '  [dry-run] Install helix editor\n'
 else
-    install_helix
+    install_helix || warn "Helix installation failed; continuing with other setup..."
 fi
 
 # Helix config
@@ -153,8 +144,11 @@ if $DRY_RUN; then
     printf '  [dry-run] go install golang.org/x/tools/gopls@latest\n'
 else
     if command -v go >/dev/null 2>&1; then
-        go install golang.org/x/tools/gopls@latest
-        ok "gopls installed"
+        if go install golang.org/x/tools/gopls@latest 2>/dev/null; then
+            ok "gopls installed"
+        else
+            warn "gopls installation failed; continuing..."
+        fi
     else
         warn "go not found — skipping gopls (install Go first, then run: go install golang.org/x/tools/gopls@latest)"
     fi
@@ -166,8 +160,11 @@ if command -v byobu-enable >/dev/null 2>&1; then
     if $DRY_RUN; then
         printf '  [dry-run] byobu-enable\n'
     else
-        byobu-enable
-        ok "byobu enabled for login sessions"
+        if byobu-enable 2>/dev/null; then
+            ok "byobu enabled for login sessions"
+        else
+            warn "byobu-enable failed; continuing..."
+        fi
     fi
 else
     warn "byobu not found — skipping (install with: apt install byobu)"
