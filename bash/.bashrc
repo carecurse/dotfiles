@@ -100,3 +100,6 @@ fi
 
 # opencode
 export PATH=/root/.opencode/bin:$PATH
+
+# Local secrets — gitignored, never committed
+[ -f "$HOME/.bashrc.local" ] && source "$HOME/.bashrc.local"
