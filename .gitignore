@@ -1,0 +1,39 @@
+# Shell history
+.bash_history
+.zsh_history
+.sh_history
+bash/.bash_history
+
+# Sensitive credentials and local overrides
+*.local
+*.secret
+*.key
+*.pem
+*.env
+.env*
+!.env.example
+
+# SSH private keys (never commit)
+ssh/id_*
+ssh/*.pem
+!ssh/*.pub
+!ssh/config
+!ssh/known_hosts.example
+
+# API tokens / secrets
+*_token
+*_api_key
+*.token
+
+# macOS
+.DS_Store
+
+# Editor artifacts
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# OS noise
+Thumbs.db
