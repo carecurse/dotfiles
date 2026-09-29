@@ -38,5 +38,9 @@ ssh/*.pem
 # OS noise
 Thumbs.db
 
+# Locally built Go binary (go build ./cmd/dotfiles)
+/dotfiles
+cmd/dotfiles/dotfiles
+
 # Helix runtime (generated tree-sitter grammars)
 config/helix/runtime/
