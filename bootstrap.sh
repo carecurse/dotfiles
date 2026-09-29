@@ -21,20 +21,30 @@ err()   { printf '  \033[31m✗\033[0m %s\n' "$*"; }
 
 # Detect context: are we in Termux, or already in proot-distro Ubuntu?
 detect_context() {
-    # Check if we're already inside proot-distro (has env var container=proot-distro)
-    if [ "$container" = "proot-distro" ]; then
-        echo "ubuntu"
-        return
+    # Most reliable: check if /data/data/com.termux exists AND pkg/proot-distro work
+    # If we're already in proot-distro, pkg will fail with "cannot run as root"
+    if [ -d /data/data/com.termux ]; then
+        # We're in the Termux environment, but check if pkg actually works
+        if pkg list-installed >/dev/null 2>&1; then
+            echo "termux"
+            return
+        else
+            # In proot-distro (pkg doesn't work), but /data/data/com.termux visible
+            echo "ubuntu"
+            return
+        fi
     fi
-    # Check if we're in nested proot (check cgroup, though may not exist)
+    # Check if we're in nested proot via cgroup (may not exist in all proot versions)
     if grep -q proot /proc/1/cgroup 2>/dev/null; then
         echo "ubuntu"
         return
     fi
-    # Check if we're in Termux
-    if [ -d /data/data/com.termux ]; then
-        echo "termux"
-        return
+    # Check for Ubuntu-specific markers
+    if [ -f /etc/os-release ]; then
+        if grep -q "^NAME=\"Ubuntu" /etc/os-release; then
+            echo "ubuntu"
+            return
+        fi
     fi
     echo "unknown"
 }
