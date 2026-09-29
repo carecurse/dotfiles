@@ -22,3 +22,17 @@ constantValues         = true
 functionTypeParameters = true
 parameterNames         = true
 rangeVariableTypes     = true
+
+# ---------------------------------------------------------------------------
+# Rust
+# ---------------------------------------------------------------------------
+[[language]]
+name = "rust"
+auto-format = true
+language-servers = ["rust-analyzer"]
+indent = { tab-width = 4, unit = "\t" }
+grammar = "rust"
+
+[language-server.rust-analyzer]
+command = "rust-analyzer"
+args = []

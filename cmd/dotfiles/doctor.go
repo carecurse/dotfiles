@@ -37,8 +37,7 @@ func doctor() bool {
 		{"hx", []string{"--version"}},
 		{"go", []string{"version"}},
 		{"gopls", []string{"version"}},
-		{"byobu", []string{"--version"}},
-		{"tmux", []string{"-V"}},
+		{"cargo", []string{"--version"}},
 		{"opencode", []string{"--version"}},
 	} {
 		if !have(t.bin) {
@@ -55,6 +54,23 @@ func doctor() bool {
 		}
 		check(t.bin, err == nil, ver)
 	}
+	
+	// rust-analyzer is in ~/.cargo/bin which may not be in PATH
+	raPath := filepath.Join(h, ".cargo", "bin", "rust-analyzer")
+	raExists := fileExists(raPath)
+	if raExists {
+		out, err := runQuiet(raPath, "--version")
+		ver := ""
+		if err == nil && out != "" {
+			ver = strings.SplitN(out, "\n", 2)[0]
+			if len(ver) > 60 {
+				ver = ver[:60]
+			}
+		}
+		check("rust-analyzer", err == nil, ver)
+	} else {
+		check("rust-analyzer", false, "not installed")
+	}
 
 	info("Dotfiles wiring")
 	check("~/.bashrc sources fragment", fileContains(filepath.Join(h, ".bashrc"), fragment), fragment)
@@ -67,9 +83,6 @@ func doctor() bool {
 	check("opencode.json symlink", isSymlink(filepath.Join(xdgConfig(h), "opencode", "opencode.json")), "→ config/opencode/opencode.json")
 
 	info("Sessions & credentials")
-	profile := filepath.Join(h, ".profile")
-	byobuHook := fileContains(profile, "byobu-launch")
-	check("byobu autolaunch hook", byobuHook, "~/.profile → byobu-launch")
 	// Never print the key itself — presence only.
 	check("ANTHROPIC_API_KEY set", os.Getenv("ANTHROPIC_API_KEY") != "", "env (value never shown)")
 

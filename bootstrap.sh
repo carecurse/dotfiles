@@ -73,8 +73,8 @@ termux_setup() {
         ok "Ubuntu installed"
     fi
 
-    info "Running bootstrap inside Ubuntu..."
-    proot-distro login ubuntu -- bash -c "curl -fsSL https://raw.githubusercontent.com/carecurse/dotfiles/main/bootstrap.sh | bash"
+    info "Bootstrap complete. Launching into Ubuntu..."
+    proot-distro login ubuntu
 }
 
 # Ubuntu setup: clone repo + run Go installer

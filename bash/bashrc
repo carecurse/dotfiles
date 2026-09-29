@@ -2,7 +2,10 @@
 # Managed config only. System defaults live in ~/.bashrc.
 
 # PATH
-export PATH="/usr/local/go/bin:$HOME/go/bin:$HOME/.opencode/bin:$PATH"
+export PATH="/usr/local/go/bin:$HOME/go/bin:$HOME/.cargo/bin:$HOME/.opencode/bin:$PATH"
+
+# Rust (if installed via rustup)
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
 
 # History
 HISTCONTROL=ignoredups:ignorespace
@@ -12,26 +15,3 @@ shopt -s histappend
 
 # Local secrets (API keys, tokens) — never committed
 [ -f "$HOME/.bashrc.local" ] && source "$HOME/.bashrc.local"
-
-# Byobu quick-reference — shown once per session (first window/pane only)
-# Note: byobu windows exec `bash -l`, so every window is a login shell with
-# SHLVL > 1 (and identical SHLVL for each new window). `SHLVL -eq 1` therefore
-# only matches the outer shell *before* byobu takes over the screen, and the
-# banner gets buried under the byobu UI. Gate on the tmux pane identity
-# instead so it prints inside byobu, exactly once.
-if [[ $- == *i* ]] && [[ -n "${TMUX:-}" ]] && command -v byobu >/dev/null 2>&1 && command -v tmux >/dev/null 2>&1; then
-    if [[ "$(tmux display-message -p '#{session_windows} #{window_index} #{pane_index}' 2>/dev/null)" == "1 0 0" ]]; then
-        cat <<'EOF'
-
-  byobu quick reference
-  ─────────────────────
-  F2          new window
-  F3 / F4     previous / next window
-  F6          detach session (leave it running)
-  F8          rename current window
-  Ctrl-F2     vertical split   │   Shift-F2  horizontal split
-  Shift-F3/F4 move between panes
-
-EOF
-    fi
-fi

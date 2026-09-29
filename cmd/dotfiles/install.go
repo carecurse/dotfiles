@@ -14,7 +14,7 @@ import (
 )
 
 // aptPackages are ensured on Debian/Ubuntu before anything else.
-var aptPackages = []string{"git", "curl", "ca-certificates", "byobu", "tmux", "sudo"}
+var aptPackages = []string{"git", "curl", "ca-certificates", "sudo"}
 
 func install(dry bool) error {
 	dryRun = dry
@@ -35,9 +35,10 @@ func install(dry bool) error {
 	ensureHelix(repo, h)
 	ensureGo()
 	ensureGopls()
+	ensureRust()
+	ensureRustAnalyzer()
 	ensureOpencode(repo, h)
 	ensureAnthropicKey()
-	ensureByobu()
 
 	fmt.Println()
 	if dryRun {
@@ -217,18 +218,35 @@ func ensureHelix(repo, h string) {
 
 	info("Building Helix tree-sitter grammars")
 	if dryRun {
-		fmt.Println("  [dry-run] hx --grammar build go")
+		fmt.Println("  [dry-run] hx --grammar fetch && hx --grammar build go && hx --grammar build rust")
 		return
 	}
 	if !have("hx") {
 		warn("helix not found — skipping grammar build")
 		return
 	}
+	
+	// Fetch all grammars first
+	info("Fetching tree-sitter grammars...")
+	if err := runTimeout(10*time.Minute, "hx", "--grammar", "fetch"); err != nil {
+		warn("Grammar fetch failed; some grammars may not compile")
+	} else {
+		ok("Tree-sitter grammars fetched")
+	}
+	
+	// Build Go grammar
 	if err := runTimeout(5*time.Minute, "hx", "--grammar", "build", "go"); err != nil {
 		warn("Go grammar build failed; run manually: hx --grammar build go")
-		return
+	} else {
+		ok("Go tree-sitter grammar built")
 	}
-	ok("Go tree-sitter grammar built")
+	
+	// Build Rust grammar
+	if err := runTimeout(5*time.Minute, "hx", "--grammar", "build", "rust"); err != nil {
+		warn("Rust grammar build failed; run manually: hx --grammar build rust")
+	} else {
+		ok("Rust tree-sitter grammar built")
+	}
 }
 
 var goVersionRe = regexp.MustCompile(`go\d+\.\d+(?:\.\d+)?`)
@@ -373,19 +391,44 @@ func ensureAnthropicKey() {
 	warn("ANTHROPIC_API_KEY is not set — add it to ~/.bashrc.local, then run: opencode")
 }
 
-func ensureByobu() {
-	info("Configuring byobu")
+func ensureRust() {
+	info("Installing Rust & Cargo")
+	if have("cargo") {
+		if out, err := runQuiet("cargo", "--version"); err == nil {
+			ok("Rust already installed (%s)", strings.TrimSpace(out))
+		} else {
+			ok("Rust already installed")
+		}
+		return
+	}
 	if dryRun {
-		fmt.Println("  [dry-run] byobu-enable")
+		fmt.Println("  [dry-run] curl -fsSL https://sh.rustup.rs | sh -s -- -y")
 		return
 	}
-	if !have("byobu-enable") {
-		warn("byobu not found — it should have been installed with prerequisites")
+	if !have("curl") {
+		warn("curl missing — cannot install Rust")
 		return
 	}
-	if err := run("byobu-enable"); err != nil {
-		warn("byobu-enable failed; continuing...")
+	if err := run("sh", "-c", "curl -fsSL https://sh.rustup.rs | sh -s -- -y"); err != nil {
+		warn("Rust installation failed; retry manually: curl -fsSL https://sh.rustup.rs | sh")
 		return
 	}
-	ok("byobu enabled for login sessions")
+	ok("Rust & Cargo installed")
+}
+
+func ensureRustAnalyzer() {
+	info("Installing rust-analyzer (Rust LSP)")
+	if dryRun {
+		fmt.Println("  [dry-run] rustup component add rust-analyzer")
+		return
+	}
+	if !have("rustup") {
+		warn("rustup not found — cannot install rust-analyzer")
+		return
+	}
+	if err := run("rustup", "component", "add", "rust-analyzer"); err != nil {
+		warn("rust-analyzer installation failed; continuing...")
+		return
+	}
+	ok("rust-analyzer installed")
 }
